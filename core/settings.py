@@ -39,6 +39,10 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'core.urls'
 CORS_ALLOW_ALL_ORIGINS = True
+CSRF_TRUSTED_ORIGINS = [
+    'https://despachante-api-production.up.railway.app',
+    'https://despachante-front-production.up.railway.app'
+]
 
 TEMPLATES = [
     {
