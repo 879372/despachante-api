@@ -36,6 +36,11 @@ class ProcessFilter(django_filters.FilterSet):
 
 class ProcessViewSet(viewsets.ModelViewSet):
     queryset = Process.objects.select_related('client').all().order_by('-created_at')
+
+    def get_serializer(self, *args, **kwargs):
+        if isinstance(kwargs.get('data', {}), list):
+            kwargs['many'] = True
+        return super().get_serializer(*args, **kwargs)
     serializer_class = ProcessSerializer
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter, filters.SearchFilter]
     pagination_class = StandardResultsSetPagination
