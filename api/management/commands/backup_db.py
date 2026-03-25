@@ -19,54 +19,30 @@ class Command(BaseCommand):
         db_name = db_settings.get('NAME')
 
         timestamp = time.strftime('%Y-%m-%d_%H-%M-%S')
-        backup_filename = f'db_backup_{timestamp}.sql.gz'
+        backup_filename = f'db_backup_{timestamp}.json.gz'
+        backup_json_path = f'/tmp/db_backup_{timestamp}.json'
         backup_path = f'/tmp/{backup_filename}'
 
-        if 'postgresql' in engine:
-            if not db_name or not db_user:
-                self.stdout.write(self.style.ERROR('As credenciais do Postgres não estão completas no ambiente.'))
-                return
-
-            self.stdout.write(f'Iniciando pg_dump para o host {db_host}...')
+        # Dumping Django Database (Native Engine)
+        self.stdout.write(f'Iniciando dump nativo do banco de dados (Cross-Platform)...')
+        try:
+            from django.core.management import call_command
+            import gzip
             
-            os.environ['PGPASSWORD'] = str(db_password)
-            command = [
-                'pg_dump',
-                '-h', db_host,
-                '-p', db_port,
-                '-U', db_user,
-                '-Z', '9', # Gzip compression extra level
-                '-f', backup_path,
-                db_name
-            ]
+            # Export via dumpdata
+            with open(backup_json_path, 'w') as f:
+                call_command('dumpdata', '--exclude', 'contenttypes', '--exclude', 'auth.Permission', stdout=f)
             
-            try:
-                subprocess.run(command, check=True)
-                self.stdout.write(self.style.SUCCESS(f'Dump Postgres concluído: {backup_path}'))
-            except subprocess.CalledProcessError as e:
-                self.stdout.write(self.style.ERROR(f'Falha ao executar pg_dump: {e}'))
-                return
-            except FileNotFoundError:
-                self.stdout.write(self.style.ERROR('O aplicativo pg_dump não foi encontrado. Arquivo apt.txt com postgresql-client está ausente?'))
-                return
+            # Compress to gzip
+            with open(backup_json_path, 'rb') as f_in, gzip.open(backup_path, 'wb') as f_out:
+                f_out.writelines(f_in)
                 
-        elif 'sqlite3' in engine:
-            # Fallback para o modo de desenvolvimento local com SQLite local SQLite
-            self.stdout.write(f'Iniciando backup local do arquivo SQLite...')
-            db_path = str(db_name)
-            if not os.path.exists(db_path):
-                self.stdout.write(self.style.ERROR('Arquivo sqlite3 de origem não encontrado.'))
-                return
-                
-            command = f'gzip -c "{db_path}" > "{backup_path}"'
-            try:
-                subprocess.run(command, shell=True, check=True)
-                self.stdout.write(self.style.SUCCESS(f'Backup do SQLite concluído: {backup_path}'))
-            except Exception as e:
-                self.stdout.write(self.style.ERROR(f'Falha ao comprimir sqlite3: {e}'))
-                return
-        else:
-            self.stdout.write(self.style.ERROR('Mecanismo de banco de dados não suportado para o backup automático.'))
+            # Cleanup JSON temp
+            os.remove(backup_json_path)
+            self.stdout.write(self.style.SUCCESS(f'Backup serializado e compactado: {backup_path}'))
+            
+        except Exception as e:
+            self.stdout.write(self.style.ERROR(f'Falha ao gerar dump do Django: {e}'))
             return
 
         if not getattr(settings, 'AWS_ACCESS_KEY_ID', None):
