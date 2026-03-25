@@ -109,8 +109,13 @@ if os.getenv('AWS_ACCESS_KEY_ID'):
     AWS_STORAGE_BUCKET_NAME = os.getenv('AWS_STORAGE_BUCKET_NAME')
     AWS_S3_ENDPOINT_URL = os.getenv('AWS_S3_ENDPOINT_URL')
     AWS_S3_REGION_NAME = os.getenv('AWS_S3_REGION_NAME', 'auto')
-    AWS_DEFAULT_ACL = 'public-read'
-    AWS_S3_FILE_OVERWRITE = False
+    
+    _acl = os.getenv('AWS_DEFAULT_ACL')
+    AWS_DEFAULT_ACL = None if not _acl or _acl.lower() == 'none' else _acl
+    
+    AWS_S3_FILE_OVERWRITE = os.getenv('AWS_S3_FILE_OVERWRITE', 'False') == 'True'
+    AWS_S3_ADDRESSING_STYLE = os.getenv('AWS_S3_ADDRESSING_STYLE', 'virtual')
+    AWS_S3_SIGNATURE_VERSION = os.getenv('AWS_S3_SIGNATURE_VERSION', 's3v4')
     
     STORAGES = {
         "default": {
