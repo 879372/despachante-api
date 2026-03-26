@@ -39,7 +39,7 @@ class Process(models.Model):
     service_type = models.CharField(max_length=50, choices=SERVICE_CHOICES, verbose_name="Tipo de Serviço")
     status = models.CharField(max_length=50, choices=STATUS_CHOICES, default='Aberto', verbose_name="Status")
     service_value = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name="Valor do Serviço")
-    tax_value = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name="Valor das Taxas")
+    tax_value = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, null=True, blank=True, verbose_name="Valor das Taxas")
     attachment = models.FileField(upload_to='attachments/', null=True, blank=True, verbose_name="Anexo")
     opened_at = models.DateField(verbose_name="Data de Abertura")
     due_date = models.DateField(blank=True, null=True, verbose_name="Data Prevista")
